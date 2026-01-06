@@ -1,0 +1,182 @@
+{
+  "version": "0.1",
+  "title": "PR-Root Holonomy Viewer - 50Hz Vibration Support",
+  "description": "Analytic-Native visualization of phase-resolved topology",
+  
+  "camera": {
+    "pos": [16, -32, 20],
+    "look": [16, 16, 0],
+    "up": [0, 0, 1],
+    "fov": 45,
+    "near": 0.1,
+    "far": 1000
+  },
+  
+  "domain": {
+    "shape": [32, 32],
+    "extents": [[0, 10], [0, 10]],
+    "units": "mm"
+  },
+  
+  "layers": [
+    {
+      "id": "phase_spine",
+      "kind": "field",
+      "source": "fields/f000_phase.npy",
+      "interpretation": "winding_number_unwrapped",
+      "colormap": "hsv",
+      "alpha": 0.9,
+      "description": "Lifted phase θ ∈ ℝ (unwrapped from principal branch)",
+      "physics": {
+        "type": "angle",
+        "period": 6.283185307,
+        "winding_sensitive": true
+      }
+    },
+    {
+      "id": "branch_cuts",
+      "kind": "contour",
+      "source": "fields/f003_parity.npy",
+      "threshold": 0.5004,
+      "color": "#FF0000",
+      "line_width": 2.5,
+      "description": "Parity discontinuities - where b flips from 0 to 1",
+      "physics": {
+        "type": "parity_indicator",
+        "values": [0, 1],
+        "jump_locations": "branch_cut"
+      }
+    },
+    {
+      "id": "arp_conductance",
+      "kind": "volume",
+      "source": "fields/f001_metrics.npy",
+      "iso_value": 1.9184,
+      "color": "#00FFCC",
+      "opacity": 0.7,
+      "description": "ARP conductance field - structure density",
+      "physics": {
+        "type": "scalar",
+        "fixed_point": 1.9184,
+        "growth_law": "G_dot = alpha * |grad(phi)| - mu * G"
+      }
+    },
+    {
+      "id": "falsifier_heatmap",
+      "kind": "field",
+      "source": "fields/f002_curvature.npy",
+      "interpretation": "holonomy_curvature",
+      "colormap": "magma",
+      "alpha": 0.6,
+      "description": "F_xy curvature - non-Abelian indicator",
+      "physics": {
+        "type": "metric",
+        "abelian_threshold": 0.01,
+        "defect_indicator": true
+      }
+    },
+    {
+      "id": "winding_density",
+      "kind": "field",
+      "source": "fields/f004_winding.npy",
+      "interpretation": "topological_charge",
+      "colormap": "RdBu",
+      "alpha": 0.5,
+      "symmetric": true,
+      "description": "Local winding number density w(x,y)",
+      "physics": {
+        "type": "integer_valued",
+        "quantized": true,
+        "vortex_positive": true,
+        "antivortex_negative": true
+      }
+    }
+  ],
+  
+  "annotations": [
+    {
+      "id": "source",
+      "pos": [16, 16, 0],
+      "label": "Source (50Hz)",
+      "style": "pin",
+      "color": "#FFFF00"
+    },
+    {
+      "id": "detector_a",
+      "pos": [0, 0, 0],
+      "label": "Detector A",
+      "style": "pin",
+      "color": "#00FF00"
+    },
+    {
+      "id": "detector_b",
+      "pos": [31, 31, 0],
+      "label": "Detector B",
+      "style": "pin",
+      "color": "#0000FF"
+    },
+    {
+      "id": "parity_markers",
+      "type": "parity_marker",
+      "threshold": 0.5004,
+      "style": "binary_jump",
+      "color_even": "#00FF00",
+      "color_odd": "#FF0000",
+      "description": "Visual indicator of b = w mod 2"
+    }
+  ],
+  
+  "interactions": {
+    "parity_sweep": {
+      "enabled": true,
+      "parameter": "winding_offset",
+      "range": [-3, 3],
+      "step": 1,
+      "description": "Slide to view different Riemann sheets"
+    },
+    "branch_cut_rotation": {
+      "enabled": true,
+      "parameter": "cut_angle",
+      "range": [0, 360],
+      "step": 15,
+      "description": "Rotate branch cut location"
+    },
+    "abelian_threshold": {
+      "enabled": true,
+      "parameter": "falsifier_cutoff",
+      "range": [0.001, 0.1],
+      "step": 0.005,
+      "description": "Adjust scalar/matrix boundary"
+    }
+  },
+  
+  "physics_zones": {
+    "conductance_spine": {
+      "description": "ARP-grown structure - most efficient 50Hz path",
+      "layer": "arp_conductance",
+      "interpretation": "Regions where G > G* (fixed point)"
+    },
+    "branch_cut_ribs": {
+      "description": "Parity discontinuities provide geometric stiffness",
+      "layer": "branch_cuts",
+      "interpretation": "Phase jump locations = structural reinforcement"
+    },
+    "phase_flow": {
+      "description": "Smooth gradient = 4x speedup active",
+      "layer": "phase_spine",
+      "interpretation": "Low curvature = Abelian = scalar ops"
+    },
+    "defect_cores": {
+      "description": "Topological singularities requiring matrix holonomy",
+      "layer": "falsifier_heatmap",
+      "interpretation": "High F_xy = vortex/antivortex cores"
+    }
+  },
+  
+  "export_settings": {
+    "stl_threshold": 1.9184,
+    "stl_smoothing": 2,
+    "point_cloud_density": 1.0,
+    "include_topology": true
+  }
+}
